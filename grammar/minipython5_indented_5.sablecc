@@ -98,6 +98,15 @@ stmt_or_fundef = {statement} stmt new_line  {-> New stmt_or_fundef.statement(stm
   arg_list_tail { -> expression } = comma expression { -> expression } ;
   
   
+  str_or_number  = {number}	number { -> New str_or_number.number(number) } 
+		     |  {string1}  string { -> New str_or_number.string1(string) }  ;
+  str_or_number_list {-> str_or_number* } = str_or_number str_or_number_list_tail*  {-> [str_or_number] };
+  str_or_number_list_tail {-> str_or_number } = comma str_or_number {-> str_or_number } ;
+  str_or_number_array {-> str_or_number* }  = l_bracket str_or_number str_or_number_list_tail*   r_bracket {-> [str_or_number] };
+
+
+			 
+  
   // argument  = {ident} identifier { -> New argument.ident(identifier) } 
 			// | {ident_assign_value} identifier assign value  { -> New argument.ident_assign_value(identifier, value) };
 			
@@ -125,12 +134,12 @@ stmt_or_fundef = {statement} stmt new_line  {-> New stmt_or_fundef.statement(stm
 			| {plus_func_call} [l]:expression plus identifier l_par arg_list? r_par {-> New expression.plus_func_call(l.expression, identifier, [arg_list.expression]) }
             | {minus} expression minus term {-> New expression.minus(expression, term.expression) } 
 			| {term} term  {-> term.expression }
-			| {ident_array} identifier l_bracket expression r_bracket {-> New expression.ident_array(identifier, expression) }
+			//| {ident_array} identifier l_bracket expression r_bracket {-> New expression.ident_array(identifier, expression) }
 			| {func_call} identifier l_par arg_list? r_par  {-> New expression.func_call(identifier, [arg_list.expression]) } 
 			//| {value} value
 			| {string} string
 			//| {number} number
-			| {value_arr} value_array  {-> New expression.value_arr( [value_array.value] ) };
+			| {str_or_number_array} str_or_number_array  {-> New expression.str_or_number_array( [str_or_number_array.str_or_number] ) };
   	
 
  
@@ -160,8 +169,8 @@ stmt_or_fundef = {statement} stmt new_line  {-> New stmt_or_fundef.statement(stm
 	  | {print_stmt}   print expression expression_tail*{ -> New stmt.print_stmt([expression]) }  
 	  | {assignment_stmt} identifier assign expression { -> New stmt.assignment_stmt( identifier, expression) } 
 	  |	{assignment_array_stmt} identifier l_bracket [expr_in_brackets]:expression r_bracket assign [expr_assigned]:expression {-> New stmt.assignment_array_stmt(identifier, expr_in_brackets.expression , expr_assigned.expression ) }  
-	  |	{function_call_stmt} identifier l_par arg_list? r_par { -> New stmt.function_call_stmt(identifier, [arg_list.expression] ) }  
-	  | {id_assign_list} identifier assign l_bracket expression;
+	  |	{function_call_stmt} identifier l_par arg_list? r_par { -> New stmt.function_call_stmt(identifier, [arg_list.expression] ) }  ;
+	  //| {id_assign_list} identifier assign l_bracket expression
 
 
 	  expression_tail {-> expression } = comma expression { ->expression } ;
@@ -176,6 +185,10 @@ stmt_or_fundef = {statement} stmt new_line  {-> New stmt_or_fundef.statement(stm
 	ident = identifier;
 	//ident_in_set  = [for_ident]:ident [in_ident]:ident;
 	ident_in_set  = identifier [in_ident]:ident;
+	
+	 str_or_number  = {number}	number 
+					|  {string1}  string ;
+	
 	value  = {number}	number  ; 
          //  | {string1}  string  ;
     comparison 	= {expression_c} [left]:expression  [right]:expression  
@@ -183,14 +196,14 @@ stmt_or_fundef = {statement} stmt new_line  {-> New stmt_or_fundef.statement(stm
 			    |  {false} false   ;
 	
 	 expression = {expr} [l_expr]:expression  [r_expr]:expression 
-				| {ident_array} identifier  expression   
+				//| {ident_array} identifier  expression   
 				|  {func_call} identifier  expression*  
 				//|  {value} value
 				| {string} string
 				|  {ident} identifier
 				| {number} number
 				|  {expr_in_par} expression 
-				|  {value_arr} value* 
+				|  {str_or_number_array} str_or_number* 
 				| {plus} [left]:expression [right]:expression
 				| | {plus_func_call} [l]:expression  identifier [r]:expression*
 				| {minus} [left]:expression [right]:expression 

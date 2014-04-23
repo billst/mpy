@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -60,10 +60,10 @@ namespace tabPreproc1
                 }
                 else if (measured < stored)
                 {
-                    string dedentString = "";
+                    string dedentString = Environment.NewLine;
                     for(int i = 0; i < stored - measured; i++)
                     {
-                        dedentString += "<";
+                        dedentString += "<" + Environment.NewLine;
                     }
                     lines[index] = line.Value;
                     lines[index - 1] = lines[index - 1].TrimEnd();
@@ -72,7 +72,7 @@ namespace tabPreproc1
                         lines[index - 1] = lines[index - 1].Trim(Environment.NewLine.ToCharArray());
                     }
                     
-                    lines[index - 1] =  lines[index - 1] + dedentString + Environment.NewLine;
+                    lines[index - 1] =  lines[index - 1] + dedentString ;
 
                     stored = measured;
                 }

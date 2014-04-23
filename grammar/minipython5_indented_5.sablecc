@@ -1,0 +1,219 @@
+//Αυτή η γραμματική έχει και προτεραιώτητα του πολλαπλασιασμού έναντι της άθροισης
+Package bill.minipython5_indented;
+
+Helpers
+  letter = [['A'..'Z']+['a'..'z']];
+  digit = ['0'..'9'];
+  cr = 13;
+  lf = 10;
+  not_cr_lf = [[32..127] - [cr + lf]];
+  	eol = cr | lf | cr lf;
+  indenth = '>';
+  dedenth = '<';
+Tokens 
+
+  
+  if = 'if';
+    then = 'then';
+  else = 'else';
+ 
+  while = 'while';
+  for = 'for';
+  in = 'in';
+ 
+  return = 'return';
+ 
+  print = 'print';
+ 
+ 
+ assign = '=';
+  colon = ':';
+  comma = ',';
+
+ 
+
+  plus = '+';
+  minus = '-';
+  mult = '*';
+  div = '/';
+  mod = 'MOD';
+
+    
+  l_par = '(';
+  r_par = ')';
+  l_bracket = '[';
+  r_bracket = ']';
+
+  sign = '-' | '+';
+  
+  l_quote = '"';
+  r_quote = '"';
+  
+  true = 'true';
+  false = 'false';
+  def = 'def' ;
+  identifier = letter (letter | digit)*;
+  number = digit+;
+  string = '"' [not_cr_lf - '"']* '"';
+  
+ 
+  
+  new_line = cr | lf | cr lf;  
+  
+
+  indent = indenth;
+  dedent = dedenth;
+   comp_op = indenth | dedenth | '==' | '>=' | '<=' | '<>';
+ 
+  
+
+  
+  //space = ' '* | cr | lf | cr lf;
+  tab = 9;
+  blank = ' '*;
+  //blank = (eol  | ' ')*;
+	
+	
+Ignored Tokens
+  tab, blank;
+
+Productions
+
+program = stmt_or_fundef+  {-> New program([stmt_or_fundef]) };
+
+stmt_or_fundef = {statement} stmt new_line  {-> New stmt_or_fundef.statement(stmt) }
+				| {fundef} function new_line {-> New stmt_or_fundef.fundef(function) }    ;
+
+//  statements {-> stmt+ }= {list}  stmt+   {-> [stmt] };
+ // |     {empty} ;
+
+  // ενδεχομένως θα πρέπει να βάλω και string with ' or ". Θα το δω στην πράξη 
+  value  = {number}	number { -> New value.number(number) } ;
+		//|  {string1}  string { -> New value.string1(string) }  ;
+  value_list {-> value* } = value value_list_tail*  {-> [value] };
+  value_list_tail {-> value } = comma value {-> value } ;
+  value_array {-> value* }  = l_bracket value value_list_tail*   r_bracket {-> [value] };
+  
+  arg_list { -> expression* } = expression	arg_list_tail* { -> [expression] }	;
+  arg_list_tail { -> expression } = comma expression { -> expression } ;
+  
+  
+  // argument  = {ident} identifier { -> New argument.ident(identifier) } 
+			// | {ident_assign_value} identifier assign value  { -> New argument.ident_assign_value(identifier, value) };
+			
+  argum =  identifier argum_value? argum_tail? {-> New argum(identifier , argum_value , argum_tail.argum) } ;
+  argum_value  = {val} assign value {-> New argum_value.val(value) }
+				| {str} assign string {-> New argum_value.str(string) };
+  argum_tail {-> argum }   = comma argum  {-> argum } ;
+  
+  
+  term {->expression } =   {mult} term mult factor {-> New expression.mult(term.expression, factor.expression)}
+						| {div} term div factor {-> New expression.div(term.expression, factor.expression) }
+						| {factor} factor {-> factor.expression} ;
+		  
+   factor {->expression} = {expr_in_par} l_par expression r_par {-> New expression.expr_in_par(expression) }
+					   // |  {fun} func_call {-> New expression.exp_fun(expression) }
+						| {num} number {-> New expression.number(number) }
+						| {ident} identifier {-> New expression.ident(identifier) }    ;
+  
+  
+  comparison = {expression_c} [left]:expression comp_op [right]:expression  {-> New comparison.expression_c(left.expression, right.expression) } 
+			|  {true} true  {-> New comparison.true( true) } 
+			|  {false} false  {-> New comparison.false( false) } ;
+			   
+  expression = {plus} expression plus term {-> New expression.plus(expression, term.expression) }
+			| {plus_func_call} [l]:expression plus identifier l_par arg_list? r_par {-> New expression.plus_func_call(l.expression, identifier, [arg_list.expression]) }
+            | {minus} expression minus term {-> New expression.minus(expression, term.expression) } 
+			| {term} term  {-> term.expression }
+			| {ident_array} identifier l_bracket expression r_bracket {-> New expression.ident_array(identifier, expression) }
+			| {func_call} identifier l_par arg_list? r_par  {-> New expression.func_call(identifier, [arg_list.expression]) } 
+			//| {value} value
+			| {string} string
+			//| {number} number
+			| {value_arr} value_array  {-> New expression.value_arr( [value_array.value] ) };
+  	
+
+ 
+  
+ suite  { -> stmt* } =  new_line indent stmt_with_newline+ dedent { -> [stmt_with_newline.stmt] } ;
+ 
+ stmt_with_newline {-> stmt }  = stmt new_line {->  stmt } ;
+ 
+ function = def identifier l_par argum? r_par colon suite { -> New function(identifier, argum, [suite.stmt]) };
+  
+   
+   
+   
+  
+  ident {->ident } = identifier { -> New ident(identifier) };
+  //ident_in_set {-> identifier+ } = [for_ident]:identifier in [in_ident]:identifier { -> [identifier] };
+  //ident_in_set  = [for_ident]:ident in [in_ident]:ident { -> New ident_in_set(for_ident.ident,in_ident.ident)   };
+  //  ident_in_set  = [for_ident]:ident in [in_ident]:ident { -> New ident_in_set([ident])   };
+    ident_in_set  = identifier in ident { -> New ident_in_set(identifier, ident)   };
+  
+
+
+  stmt = {if_stmt} if   comparison  colon suite   { -> New stmt.if_stmt( comparison, [suite.stmt] ) }  	
+      | {while_stmt}   while  comparison  colon suite { -> New stmt.while_stmt( comparison, [suite.stmt] ) }   
+	  | {for_stmt}     for ident_in_set colon suite  { -> New stmt.for_stmt( ident_in_set, [suite.stmt]) }  
+	  | {return_stmt}  return expression   { -> New stmt.return_stmt( expression ) } 
+	  | {print_stmt}   print expression expression_tail*{ -> New stmt.print_stmt([expression]) }  
+	  | {assignment_stmt} identifier assign expression { -> New stmt.assignment_stmt( identifier, expression) } 
+	  |	{assignment_array_stmt} identifier l_bracket [expr_in_brackets]:expression r_bracket assign [expr_assigned]:expression {-> New stmt.assignment_array_stmt(identifier, expr_in_brackets.expression , expr_assigned.expression ) }  
+	  |	{function_call_stmt} identifier l_par arg_list? r_par { -> New stmt.function_call_stmt(identifier, [arg_list.expression] ) }  
+	  | {id_assign_list} identifier assign l_bracket expression;
+
+
+	  expression_tail {-> expression } = comma expression { ->expression } ;
+	  
+	Abstract Syntax Tree
+    program = stmt_or_fundef+ ;
+	
+	stmt_or_fundef = {statement} stmt 
+					| {fundef} function    ;
+	//statements = {list}  stmt+ ;
+		
+	ident = identifier;
+	//ident_in_set  = [for_ident]:ident [in_ident]:ident;
+	ident_in_set  = identifier [in_ident]:ident;
+	value  = {number}	number  ; 
+         //  | {string1}  string  ;
+    comparison 	= {expression_c} [left]:expression  [right]:expression  
+				| {true} true   
+			    |  {false} false   ;
+	
+	 expression = {expr} [l_expr]:expression  [r_expr]:expression 
+				| {ident_array} identifier  expression   
+				|  {func_call} identifier  expression*  
+				//|  {value} value
+				| {string} string
+				|  {ident} identifier
+				| {number} number
+				|  {expr_in_par} expression 
+				|  {value_arr} value* 
+				| {plus} [left]:expression [right]:expression
+				| | {plus_func_call} [l]:expression  identifier [r]:expression*
+				| {minus} [left]:expression [right]:expression 
+				| {mult} [left]:expression [right]:expression 
+				| {div} [left]:expression [right]:expression ;
+				
+				
+				
+	 argument  = 	{ident} identifier 
+				| 	{ident_assign_value} identifier  value ;
+				
+	 argum =  identifier  argum_value?  argum? ;
+     argum_value  = {val} value 
+					| {str} string ;
+	
+	 function =  identifier argum?  stmt+ ;
+     
+	 stmt = 	{if_stmt}  comparison  stmt*    
+			| 	{while_stmt}    comparison stmt*     
+			|   {for_stmt}      ident_in_set   stmt*  
+			|   {return_stmt}   expression 
+			|   {print_stmt}    expression* 
+			|   {assignment_stmt}  identifier expression 
+			|	{assignment_array_stmt}  identifier [expr_in_brackets]:expression [expr_assigned]:expression 
+			|	{function_call_stmt} identifier expression*  ;
+			

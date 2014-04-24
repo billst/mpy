@@ -8,8 +8,8 @@ Helpers
   lf = 10;
   not_cr_lf = [[32..127] - [cr + lf]];
   	eol = cr | lf | cr lf;
-  indenth = '>';
-  dedenth = '<';
+  indenth = '$';
+  dedenth = '!';
 Tokens 
 
   
@@ -63,7 +63,7 @@ Tokens
 
   indent = indenth;
   dedent = dedenth;
-   comp_op = indenth | dedenth | '==' | '>=' | '<=' | '<>';
+  comp_op = '>' | '<' | '==' | '>=' | '<=' | '<>';
  
   
 

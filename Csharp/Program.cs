@@ -32,6 +32,11 @@ namespace tabPreproc1
 
         static void identInLines(string filepath)
         {
+
+            string indent = "$";
+            string dedent = "!";
+
+
             string input = "";
             using (StreamReader sr = new StreamReader(filepath))
             {
@@ -55,7 +60,7 @@ namespace tabPreproc1
                // measured = Regex.Match(line.Value, @"^(\t)+", RegexOptions.Multiline).Captures.Count;
                 if (measured > stored)
                 {
-                    lines[index] = ">" + line.Value;
+                    lines[index] = indent + line.Value;
                     stored++;
                 }
                 else if (measured < stored)
@@ -63,7 +68,7 @@ namespace tabPreproc1
                     string dedentString = Environment.NewLine;
                     for(int i = 0; i < stored - measured; i++)
                     {
-                        dedentString += "<" + Environment.NewLine;
+                        dedentString += dedent + Environment.NewLine;
                     }
                     lines[index] = line.Value;
                     lines[index - 1] = lines[index - 1].TrimEnd();
@@ -85,7 +90,7 @@ namespace tabPreproc1
             }
             for (int j = 0; j < stored; j++)
             {
-                lines[lines.Length - 1] += "<" + Environment.NewLine;
+                lines[lines.Length - 1] += dedent + Environment.NewLine;
             }
 
             string output = "";

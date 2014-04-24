@@ -85,7 +85,7 @@ namespace tabPreproc1
             }
             for (int j = 0; j < stored; j++)
             {
-                lines[lines.Length - 1] += "<" + lines[lines.Length - 1];
+                lines[lines.Length - 1] += "<" + Environment.NewLine;
             }
 
             string output = "";

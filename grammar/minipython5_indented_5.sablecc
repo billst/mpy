@@ -4,85 +4,94 @@ Package bill.minipython5_indented;
 Helpers
   letter = [['A'..'Z']+['a'..'z']];
   digit = ['0'..'9'];
+all = [0 .. 127];
   cr = 13;
   lf = 10;
   not_cr_lf = [[32..127] - [cr + lf]];
-  	eol = cr | lf | cr lf;
+  eolh = cr | lf | cr lf;
+  not_eol = [all - [cr + lf]];  
   indenth = '$';
   dedenth = '!';
-Tokens 
-
   
-  if = 'if';
-    then = 'then';
-  else = 'else';
+States
+normal, comment;
+
+Tokens 
+  { normal ->comment, comment   }  comment = '#';
+  { normal, comment->normal } new_line = eolh; 
+  
+ {comment} comment_body =  not_eol* ; 
+{normal} if = 'if';
+ {normal}    then = 'then';
+ {normal}  else = 'else';
  
-  while = 'while';
-  for = 'for';
-  in = 'in';
+{normal} while = 'while';
+ {normal}  for = 'for';
+ {normal}  in = 'in';
  
-  return = 'return';
+ {normal}  return = 'return';
  
-  print = 'print';
+  {normal} print = 'print';
  
  
- assign = '=';
-  colon = ':';
-  comma = ',';
+  {normal}assign = '=';
+  {normal} colon = ':';
+  {normal} comma = ',';
 
  
 
-  plus = '+';
-  minus = '-';
-  mult = '*';
-  div = '/';
-  mod = 'MOD';
+  {normal} plus = '+';
+  {normal} minus = '-';
+  {normal} mult = '*';
+  {normal} div = '/';
+  {normal} mod = 'MOD';
 
     
-  l_par = '(';
-  r_par = ')';
-  l_bracket = '[';
-  r_bracket = ']';
+  {normal} l_par = '(';
+  {normal} r_par = ')';
+  {normal} l_bracket = '[';
+  {normal} r_bracket = ']';
 
-  sign = '-' | '+';
+  {normal} sign = '-' | '+';
   
-  l_quote = '"';
-  r_quote = '"';
+  {normal} l_quote = '"';
+  {normal} r_quote = '"';
   
-  true = 'true';
-  false = 'false';
-  def = 'def' ;
-  identifier = letter (letter | digit)*;
-  number = digit+;
-  string = '"' [not_cr_lf - '"']* '"';
+  {normal} true = 'true';
+  {normal} false = 'false';
+ {normal}  def = 'def' ;
+ {normal}  identifier = letter (letter | digit)*;
+  {normal} number = digit+;
+ {normal}  string = '"' [not_cr_lf - '"']* '"';
   
  
   
-  new_line = cr | lf | cr lf;  
+ // {normal} new_line = cr | lf | cr lf;  
   
 
-  indent = indenth;
-  dedent = dedenth;
-  comp_op = '>' | '<' | '==' | '>=' | '<=' | '<>';
+ {normal}  indent = indenth;
+ {normal}  dedent = dedenth;
+  {normal} comp_op = '>' | '<' | '==' | '>=' | '<=' | '<>';
  
   
 
   
   //space = ' '* | cr | lf | cr lf;
-  tab = 9;
-  blank = ' '*;
+ {normal}  tab = 9;
+ {normal}  blank = ' '*;
   //blank = (eol  | ' ')*;
 	
 	
 Ignored Tokens
-  tab, blank;
+   tab, blank;
+  //comment
 
 Productions
 
-program = stmt_or_fundef+  {-> New program([stmt_or_fundef]) };
+program = new_line* stmt_or_fundef+  {-> New program([stmt_or_fundef]) } ;
 
-stmt_or_fundef = {statement} stmt new_line  {-> New stmt_or_fundef.statement(stmt) }
-				| {fundef} function new_line {-> New stmt_or_fundef.fundef(function) }    ;
+stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(stmt) }
+				| {fundef}   function new_line* {-> New stmt_or_fundef.fundef(function) }    ;
 
 //  statements {-> stmt+ }= {list}  stmt+   {-> [stmt] };
  // |     {empty} ;

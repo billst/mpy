@@ -15,8 +15,8 @@ public class LexerTest1
   {
     try
     {
-      Lexer lexer =
-        new Lexer(
+     MyLexer lexer =
+        new MyLexer(
         new PushbackReader(
         new FileReader(args[0].toString()), 1024));
 
@@ -27,8 +27,8 @@ public class LexerTest1
         token = lexer.next(); 
        
       }
-      Lexer lexer2 =
-    	        new Lexer(
+      MyLexer lexer2 =
+    	        new MyLexer(
     	        new PushbackReader(
     	        new FileReader(args[0].toString()), 1024));
       Parser parser = new Parser(lexer2);      

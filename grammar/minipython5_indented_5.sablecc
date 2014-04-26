@@ -93,35 +93,25 @@ program = new_line* stmt_or_fundef+  {-> New program([stmt_or_fundef]) } ;
 stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(stmt) }
 				| {fundef}   function new_line* {-> New stmt_or_fundef.fundef(function) }    ;
 
-//  statements {-> stmt+ }= {list}  stmt+   {-> [stmt] };
- // |     {empty} ;
 
-  // ενδεχομένως θα πρέπει να βάλω και string with ' or ". Θα το δω στην πράξη 
-  value  = {number}	number { -> New value.number(number) } ;
-		//|  {string1}  string { -> New value.string1(string) }  ;
-  value_list {-> value* } = value value_list_tail*  {-> [value] };
-  value_list_tail {-> value } = comma value {-> value } ;
-  value_array {-> value* }  = l_bracket value value_list_tail*   r_bracket {-> [value] };
   
   arg_list { -> expression* } = expression	arg_list_tail* { -> [expression] }	;
   arg_list_tail { -> expression } = comma expression { -> expression } ;
   
   
-  str_or_number  = {number}	number { -> New str_or_number.number(number) } 
-		     |  {string1}  string { -> New str_or_number.string1(string) }  ;
-  str_or_number_list {-> str_or_number* } = str_or_number str_or_number_list_tail*  {-> [str_or_number] };
-  str_or_number_list_tail {-> str_or_number } = comma str_or_number {-> str_or_number } ;
-  str_or_number_array {-> str_or_number* }  = l_bracket str_or_number str_or_number_list_tail*   r_bracket {-> [str_or_number] };
+  value  = {number}	number { -> New value.number(number) } 
+		     |  {string1}  string { -> New value.string1(string) }  ;
+  value_list {-> value* } = value value_list_tail*  {-> [value] };
+  value_list_tail {-> value } = comma value {-> value } ;
+  value_array {-> value* }  = l_bracket value value_list_tail*   r_bracket {-> [value] };
 
 
 			 
-  
-  // argument  = {ident} identifier { -> New argument.ident(identifier) } 
-			// | {ident_assign_value} identifier assign value  { -> New argument.ident_assign_value(identifier, value) };
-			
-  argum =  identifier argum_value? argum_tail? {-> New argum(identifier , argum_value , argum_tail.argum) } ;
-  argum_value  = {val} assign value {-> New argum_value.val(value) }
-				| {str} assign string {-> New argum_value.str(string) };
+  		
+  argum =  identifier argum_value? argum_tail? {-> New argum(identifier , argum_value.value , argum_tail.argum) } ;
+  argum_value {-> value } = assign value {-> value };
+  // argum_value  = {val} assign number {-> New argum_value.val(number) }
+				// | {str} assign string {-> New argum_value.str(string) };
   argum_tail {-> argum }   = comma argum  {-> argum } ;
   
   
@@ -148,7 +138,7 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
 			//| {value} value
 			| {string} string
 			//| {number} number
-			| {str_or_number_array} str_or_number_array  {-> New expression.str_or_number_array( [str_or_number_array.str_or_number] ) };
+			| {value_array} value_array  {-> New expression.value_array( [value_array.value] ) };
   	
 
  
@@ -195,11 +185,10 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
 	//ident_in_set  = [for_ident]:ident [in_ident]:ident;
 	ident_in_set  = identifier [in_ident]:ident;
 	
-	 str_or_number  = {number}	number 
-					|  {string1}  string ;
+	 value  = {number}	number 
+				|  {string1}  string ;
 	
-	value  = {number}	number  ; 
-         //  | {string1}  string  ;
+	
     comparison 	= {expression_c} [left]:expression  [right]:expression  
 				| {true} true   
 			    |  {false} false   ;
@@ -212,21 +201,19 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
 				|  {ident} identifier
 				| {number} number
 				|  {expr_in_par} expression 
-				|  {str_or_number_array} str_or_number* 
+				|  {value_array} value* 
 				| {plus} [left]:expression [right]:expression
-				| | {plus_func_call} [l]:expression  identifier [r]:expression*
+				| {plus_func_call} [l]:expression  identifier [r]:expression*
 				| {minus} [left]:expression [right]:expression 
 				| {mult} [left]:expression [right]:expression 
 				| {div} [left]:expression [right]:expression ;
 				
 				
 				
-	 argument  = 	{ident} identifier 
-				| 	{ident_assign_value} identifier  value ;
+
 				
-	 argum =  identifier  argum_value?  argum? ;
-     argum_value  = {val} value 
-					| {str} string ;
+	 argum =  identifier  value?  argum? ;
+    
 	
 	 function =  identifier argum?  stmt+ ;
      

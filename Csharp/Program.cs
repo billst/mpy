@@ -11,10 +11,54 @@ namespace tabPreproc1
 
 
 
-    class Ident
+    class State
     {
-        public int length = 0;
-        public int position = 0;
+        public int stored = 0;
+        public int level = 0;
+
+        public void reset()
+        {
+            stored = 0;
+            level = 0;
+        }
+
+        public int update(int measured)
+        {
+            if (this.stored == 0 && this.level == 0)
+            {
+                if (measured > 0)
+                {
+             
+                    this.stored = 1;       
+                    this.level = measured - this.stored;
+                    return 1;
+                }
+                else return 0;
+            }
+            else
+            {
+                if (measured - (level + stored) > 1) throw new Exception("there is a problem with indents");
+                if (measured < this.level)
+                {
+                    int tempStored = this.stored;
+                    this.reset();
+                    if(measured > 0)  throw new Exception("there is a problem with the indents");
+                    return -1 * tempStored;
+                    
+                }
+                else if (level <= measured)
+                {
+                    int tempOutput = (measured - this.level) - this.stored;
+                    this.stored = measured - level;
+                    this.level = level;
+                    if (level == measured) this.reset();
+                    return tempOutput;
+                }
+                return 0;
+
+            }
+
+        }
     }
 
 
@@ -36,13 +80,13 @@ namespace tabPreproc1
             string indent = "$";
             string dedent = "!";
 
-
+            State state = new State();
             string input = "";
             using (StreamReader sr = new StreamReader(filepath))
             {
 
                 input = sr.ReadToEnd();
-                sr.Close();
+               // sr.Close();
                 //input += Environment.NewLine + " ";
             }
 
@@ -51,22 +95,24 @@ namespace tabPreproc1
             string[] lines = new string[matchesLines.Count +1];
            // lines[lines.Length - 1] = " ";
             int index = 0; 
-            int stored = 0;    
+               
             int measured = 0;
             foreach (Match line in matchesLines)
             {
 
                 measured = line.Value.Count(p => p == '\t');
                // measured = Regex.Match(line.Value, @"^(\t)+", RegexOptions.Multiline).Captures.Count;
-                if (measured > stored)
+               
+                int outputIndents = state.update(measured);
+                if (outputIndents > 0)
                 {
                     lines[index] = indent + line.Value;
-                    stored++;
+                    
                 }
-                else if (measured < stored)
+                else if (outputIndents <0)
                 {
                     string dedentString = Environment.NewLine;
-                    for(int i = 0; i < stored - measured; i++)
+                    for(int i = 0; i < (-1 * outputIndents); i++)
                     {
                         dedentString += dedent + Environment.NewLine;
                     }
@@ -79,7 +125,7 @@ namespace tabPreproc1
                     
                     lines[index - 1] =  lines[index - 1] + dedentString ;
 
-                    stored = measured;
+                    
                 }
                 else
                 {
@@ -88,7 +134,7 @@ namespace tabPreproc1
                 index++;
 
             }
-            for (int j = 0; j < stored; j++)
+            for (int j = 0; j < state.stored ; j++)
             {
                 lines[lines.Length - 1] += dedent + Environment.NewLine;
             }
@@ -102,6 +148,8 @@ namespace tabPreproc1
             sw.Close();
                         
         }
+
+
 
 
      

@@ -95,15 +95,16 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
 
 
   
-  arg_list { -> expression* } = expression	arg_list_tail* { -> [expression] }	;
-  arg_list_tail { -> expression } = comma expression { -> expression } ;
+  arg_list  =  [left]:expression	arg_list_tail* { -> New arg_list(left.expression, [arg_list_tail.expression]) }	;
+  arg_list_tail { -> expression } = comma expression { ->  expression } ;
   
   
   value  = {number}	number { -> New value.number(number) } 
 		     |  {string1}  string { -> New value.string1(string) }  ;
-  value_list {-> value* } = value value_list_tail*  {-> [value] };
+  value_list  = [left]:value value_list_tail*  {->  New value_list(left.value, [value_list_tail.value]) };  
+  value_array   = l_bracket [l]:value value_list_tail*   r_bracket {-> New value_array(l.value, [value_list_tail.value] ) };
   value_list_tail {-> value } = comma value {-> value } ;
-  value_array {-> value* }  = l_bracket value value_list_tail*   r_bracket {-> [value] };
+
 
 
 			 
@@ -120,25 +121,26 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
 						| {factor} factor {-> factor.expression} ;
 		  
    factor {->expression} = {expr_in_par} l_par expression r_par {-> New expression.expr_in_par(expression) }
-					   // |  {fun} func_call {-> New expression.exp_fun(expression) }
+					    |  {fun} func_call {-> New expression.func_call(func_call) }
 						| {num} number {-> New expression.number(number) }
 						| {ident} identifier {-> New expression.ident(identifier) }    ;
   
-  
+   func_call = identifier l_par arg_list? r_par {-> New func_call(identifier, arg_list) };
+   
   comparison = {expression_c} [left]:expression comp_op [right]:expression  {-> New comparison.expression_c(left.expression, right.expression) } 
 			|  {true} true  {-> New comparison.true( true) } 
 			|  {false} false  {-> New comparison.false( false) } ;
 			   
   expression = {plus} expression plus term {-> New expression.plus(expression, term.expression) }
-			| {plus_func_call} [l]:expression plus identifier l_par arg_list? r_par {-> New expression.plus_func_call(l.expression, identifier, [arg_list.expression]) }
+ // | {plus_func_call} expression plus identifier l_par arg_list? r_par {-> New expression.plus_func_call(expression, identifier, arg_list) }
             | {minus} expression minus term {-> New expression.minus(expression, term.expression) } 
 			| {term} term  {-> term.expression }
 			//| {ident_array} identifier l_bracket expression r_bracket {-> New expression.ident_array(identifier, expression) }
-			| {func_call} identifier l_par arg_list? r_par  {-> New expression.func_call(identifier, [arg_list.expression]) } 
+			//| {func_call} func_call  {-> New expression.func_call(func_call) } 
 			//| {value} value
 			| {string} string
 			//| {number} number
-			| {value_array} value_array  {-> New expression.value_array( [value_array.value] ) };
+			| {value_array} value_array  {-> New expression.value_array(value_array)  };
   	
 
  
@@ -165,10 +167,10 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
       | {while_stmt}   while  comparison  colon suite { -> New stmt.while_stmt( comparison, [suite.stmt] ) }   
 	  | {for_stmt}     for ident_in_set colon suite  { -> New stmt.for_stmt( ident_in_set, [suite.stmt]) }  
 	  | {return_stmt}  return expression   { -> New stmt.return_stmt( expression ) } 
-	  | {print_stmt}   print expression expression_tail*{ -> New stmt.print_stmt([expression]) }  
+	  | {print_stmt}   print [l]:expression expression_tail*{ -> New stmt.print_stmt(l.expression, [expression_tail.expression]) }  
 	  | {assignment_stmt} identifier assign expression { -> New stmt.assignment_stmt( identifier, expression) } 
 	  |	{assignment_array_stmt} identifier l_bracket [expr_in_brackets]:expression r_bracket assign [expr_assigned]:expression {-> New stmt.assignment_array_stmt(identifier, expr_in_brackets.expression , expr_assigned.expression ) }  
-	  |	{function_call_stmt} identifier l_par arg_list? r_par { -> New stmt.function_call_stmt(identifier, [arg_list.expression] ) }  ;
+	  |	{function_call_stmt} identifier l_par arg_list? r_par { -> New stmt.function_call_stmt(identifier, arg_list ) }  ;
 	  //| {id_assign_list} identifier assign l_bracket expression
 
 
@@ -195,15 +197,15 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
 	
 	 expression = {expr} [l_expr]:expression  [r_expr]:expression 
 				//| {ident_array} identifier  expression   
-				|  {func_call} identifier  expression*  
+				|  {func_call} func_call  
 				//|  {value} value
 				| {string} string
 				|  {ident} identifier
 				| {number} number
 				|  {expr_in_par} expression 
-				|  {value_array} value* 
+				|  {value_array} value_array 
 				| {plus} [left]:expression [right]:expression
-				| {plus_func_call} [l]:expression  identifier [r]:expression*
+				//| {plus_func_call} [l]:expression  identifier arg_list?
 				| {minus} [left]:expression [right]:expression 
 				| {mult} [left]:expression [right]:expression 
 				| {div} [left]:expression [right]:expression ;
@@ -211,18 +213,21 @@ stmt_or_fundef = {statement}   stmt new_line*  {-> New stmt_or_fundef.statement(
 				
 				
 
-				
+	  arg_list  =  [l]:expression	 [arg_list_tail]:expression*	;
+        value_list  = [left]:value  [value_list_tail]:value* ;  
+  value_array   =  [l]:value [value_list_tail]:value* ;
+    	  
 	 argum =  identifier  value?  argum? ;
     
-	
+	func_call = identifier arg_list?;
 	 function =  identifier argum?  stmt+ ;
      
 	 stmt = 	{if_stmt}  comparison  stmt*    
 			| 	{while_stmt}    comparison stmt*     
 			|   {for_stmt}      ident_in_set   stmt*  
 			|   {return_stmt}   expression 
-			|   {print_stmt}    expression* 
+			|   {print_stmt}   [l]:expression [expression_tail]:expression* 
 			|   {assignment_stmt}  identifier expression 
 			|	{assignment_array_stmt}  identifier [expr_in_brackets]:expression [expr_assigned]:expression 
-			|	{function_call_stmt} identifier expression*  ;
+			|	{function_call_stmt} identifier arg_list?  ;
 			
